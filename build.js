@@ -31,6 +31,15 @@ ${body}
 `;
 }
 
+// Sections with a heading sit on their own white board, so the heading stays
+// readable when GitHub is in dark mode.
+function framed(w, h, body, defs) {
+  const pad = 36, k = (w - pad * 2) / w;
+  const H = Math.round(h * k + pad * 2);
+  return svg(w, H, `${board(0, 0, w, H)}
+<g transform="translate(${pad} ${pad}) scale(${k.toFixed(4)})">${body}</g>`, defs);
+}
+
 // White board with a faint grid and the site's corner brackets
 function board(x, y, w, h, { grid = true, corner = C.ink, fill = '#ffffff', len = 22 } = {}) {
   const b = (px, py, dx, dy) =>
@@ -210,7 +219,7 @@ ${brands.map(([n, d, f], i) => {
 <text x="${x + 20}" y="${y + 64}" font-family="${SANS}" font-size="15" fill="${C.text2}">${esc(d)}</text>
 <text x="${x + 20}" y="${y + 92}" font-family="${MONO}" font-size="13" fill="${C.ink}">${esc(f)}</text>`;
   }).join('\n')}`;
-  return svg(W, H, body, hd.defs);
+  return framed(W, H, body, hd.defs);
 }
 
 // ---------- Stack ----------
@@ -235,7 +244,7 @@ function stack() {
       x += w + 10;
     });
   });
-  return svg(W, H, out, hd.defs);
+  return framed(W, H, out, hd.defs);
 }
 
 const files = {
