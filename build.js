@@ -6,11 +6,22 @@ const fs = require('fs');
 const path = require('path');
 
 const OUT = path.join(__dirname, 'assets');
-const C = {
-  ink: '#0a0a0b', text2: '#45454d', text3: '#7d7d87',
-  border: '#e2e2e6', borderStrong: '#bdbdc4', subtle: '#f6f6f8',
-  red: 'rgb(232,64,88)', cyan: 'rgb(44,190,222)'
+// Light matches the site; dark is the same design inverted for GitHub dark mode.
+const THEMES = {
+  light: {
+    bg: '#ffffff', panel: '#fbfbfc', field: '#ffffff', subtle: '#f6f6f8',
+    ink: '#0a0a0b', onInk: '#ffffff', text2: '#45454d', text3: '#7d7d87',
+    border: '#e2e2e6', borderStrong: '#bdbdc4', pill: 'rgba(0,0,0,0.45)',
+    grid: 'rgba(0,0,0,0.045)', red: 'rgb(232,64,88)', cyan: 'rgb(44,190,222)'
+  },
+  dark: {
+    bg: '#0b0b0d', panel: '#111114', field: '#0b0b0d', subtle: '#16161a',
+    ink: '#f2f2f4', onInk: '#0a0a0b', text2: '#b4b4bd', text3: '#85858f',
+    border: '#2a2a30', borderStrong: '#45454d', pill: 'rgba(255,255,255,0.5)',
+    grid: 'rgba(255,255,255,0.05)', red: 'rgb(240,84,108)', cyan: 'rgb(64,200,230)'
+  }
 };
+let C = THEMES.light;
 const SANS = "'Inter Tight','Inter','Helvetica Neue',Helvetica,Arial,sans-serif";
 const SERIF = "'Instrument Serif','Iowan Old Style','Palatino Linotype',Georgia,serif";
 const MONO = "'IBM Plex Mono','SFMono-Regular',Menlo,Consolas,monospace";
@@ -22,7 +33,7 @@ function svg(w, h, body, defs = '') {
   return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
 <defs>
   <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-    <path d="M40 0H0V40" fill="none" stroke="rgba(0,0,0,0.045)" stroke-width="1"/>
+    <path d="M40 0H0V40" fill="none" stroke="${C.grid}" stroke-width="1"/>
   </pattern>
   ${defs}
 </defs>
@@ -31,8 +42,8 @@ ${body}
 `;
 }
 
-// Sections with a heading sit on their own white board, so the heading stays
-// readable when GitHub is in dark mode.
+// Sections with a heading sit on their own board, so the heading always has
+// a background of its own.
 function framed(w, h, body, defs) {
   const pad = 36, k = (w - pad * 2) / w;
   const H = Math.round(h * k + pad * 2);
@@ -41,7 +52,7 @@ function framed(w, h, body, defs) {
 }
 
 // White board with a faint grid and the site's corner brackets
-function board(x, y, w, h, { grid = true, corner = C.ink, fill = '#ffffff', len = 22 } = {}) {
+function board(x, y, w, h, { grid = true, corner = C.ink, fill = C.bg, len = 22 } = {}) {
   const b = (px, py, dx, dy) =>
     `<path d="M${px} ${py + dy * len}V${py}H${px + dx * len}" fill="none" stroke="${corner}" stroke-width="2"/>`;
   return `<rect x="${x + 0.5}" y="${y + 0.5}" width="${w - 1}" height="${h - 1}" fill="${fill}" stroke="${C.border}"/>
@@ -125,7 +136,7 @@ function header() {
   ];
   const rowH = 58, top = cy + 64;
   const ch = top - cy + rows.length * rowH + 8;
-  const card = `${board(cx, cy, cw, ch, { grid: false, fill: '#fbfbfc' })}
+  const card = `${board(cx, cy, cw, ch, { grid: false, fill: C.panel })}
 <text x="${cx + 26}" y="${cy + 40}" font-family="${MONO}" font-size="13" fill="${C.text3}">At a glance</text>
 ${rows.map(([k, v], i) => {
     const y = top + i * rowH;
@@ -135,7 +146,7 @@ ${rows.map(([k, v], i) => {
   }).join('\n')}`;
 
   const body = `${board(0, 0, W, H)}
-<rect x="48" y="40" width="34" height="34" fill="#fff" stroke="${C.ink}" stroke-width="1.5"/>
+<rect x="48" y="40" width="34" height="34" fill="${C.field}" stroke="${C.ink}" stroke-width="1.5"/>
 <rect x="78" y="70" width="6" height="6" fill="${C.text3}"/>
 <text x="65" y="63" text-anchor="middle" font-family="${MONO}" font-size="16" font-weight="600" fill="${C.ink}">C</text>
 <text x="96" y="63" font-family="${SANS}" font-size="18" font-weight="600" letter-spacing="-0.3" fill="${C.ink}">Cyber Naskar</text>
@@ -154,10 +165,10 @@ function button(label, primary) {
   const w = Math.round(label.length * 9.4 + 52), h = 52, cut = 10;
   const shape = primary
     ? `<path d="M0 0H${w - cut}L${w} ${cut}V${h}H${cut}L0 ${h - cut}Z" fill="${C.ink}"/>`
-    : `<rect x="0.75" y="0.75" width="${w - 1.5}" height="${h - 1.5}" fill="#fff" stroke="${C.borderStrong}" stroke-width="1.5"/>`;
+    : `<rect x="0.75" y="0.75" width="${w - 1.5}" height="${h - 1.5}" fill="${C.field}" stroke="${C.borderStrong}" stroke-width="1.5"/>`;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
 ${shape}
-<text x="${w / 2}" y="31.5" text-anchor="middle" font-family="${MONO}" font-size="15" font-weight="600" fill="${primary ? '#fff' : C.ink}">${esc(label)}</text>
+<text x="${w / 2}" y="31.5" text-anchor="middle" font-family="${MONO}" font-size="15" font-weight="600" fill="${primary ? C.onInk : C.ink}">${esc(label)}</text>
 </svg>
 `;
 }
@@ -208,7 +219,7 @@ function now() {
 ${board(bx, by, bw, bh, { corner: C.borderStrong })}
 <text x="32" y="${by + 50}" font-family="${SANS}" font-size="24" font-weight="600" letter-spacing="-0.4" fill="${C.ink}">Senior Software Engineer</text>
 <text x="32" y="${by + 78}" font-family="${SANS}" font-size="16" fill="${C.ink}">Anatta · Shopify Platinum Partner · Remote, as a consultant</text>
-<rect x="${bw - 32 - pw}" y="${by + 30}" width="${pw}" height="28" fill="#fff" stroke="rgba(0,0,0,0.45)"/>
+<rect x="${bw - 32 - pw}" y="${by + 30}" width="${pw}" height="28" fill="${C.field}" stroke="${C.pill}"/>
 <text x="${bw - 32 - pw / 2}" y="${by + 49}" text-anchor="middle" font-family="${MONO}" font-size="13" fill="${C.ink}">${esc(pill)}</text>
 ${points.map((p, i) => `<text x="32" y="${by + 124 + i * 30}" font-family="${MONO}" font-size="15" font-weight="700" fill="${C.ink}">&gt;</text>
 <text x="54" y="${by + 124 + i * 30}" font-family="${SANS}" font-size="16" fill="${C.text2}">${esc(p)}</text>`).join('\n')}
@@ -239,7 +250,7 @@ function stack() {
     let x = 140;
     tags.forEach((t) => {
       const w = Math.round(t.length * 8.4 + 30);
-      out += `<rect x="${x + 0.5}" y="${y + 0.5}" width="${w - 1}" height="37" fill="#fff" stroke="${C.borderStrong}"/>
+      out += `<rect x="${x + 0.5}" y="${y + 0.5}" width="${w - 1}" height="37" fill="${C.field}" stroke="${C.borderStrong}"/>
 <text x="${x + w / 2}" y="${y + 24}" text-anchor="middle" font-family="${SANS}" font-size="15" font-weight="500" fill="${C.ink}">${esc(t)}</text>`;
       x += w + 10;
     });
@@ -247,7 +258,7 @@ function stack() {
   return framed(W, H, out, hd.defs);
 }
 
-const files = {
+const build = () => ({
   'header.svg': header(),
   'stats.svg': stats(),
   'now.svg': now(),
@@ -256,8 +267,12 @@ const files = {
   'btn-site.svg': button('Website', false),
   'btn-chat.svg': button('Chat with my AI', false),
   'btn-linkedin.svg': button('LinkedIn', false)
-};
-for (const [name, content] of Object.entries(files)) {
-  fs.writeFileSync(path.join(OUT, name), content);
-  console.log(name.padEnd(18), (Buffer.byteLength(content) / 1024).toFixed(1) + ' KB');
+});
+for (const theme of Object.keys(THEMES)) {
+  C = THEMES[theme];
+  for (const [name, content] of Object.entries(build())) {
+    const file = theme === 'light' ? name : name.replace('.svg', '-dark.svg');
+    fs.writeFileSync(path.join(OUT, file), content);
+    console.log(file.padEnd(22), (Buffer.byteLength(content) / 1024).toFixed(1) + ' KB');
+  }
 }

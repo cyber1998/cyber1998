@@ -11,7 +11,7 @@
 <rect x="0.5" y="0.5" width="1199" height="599" fill="#ffffff" stroke="#e2e2e6"/>
 <rect x="1" y="1" width="1198" height="598" fill="url(#grid)"/>
 <path d="M0 22V0H22" fill="none" stroke="#0a0a0b" stroke-width="2"/><path d="M1200 22V0H1178" fill="none" stroke="#0a0a0b" stroke-width="2"/><path d="M0 578V600H22" fill="none" stroke="#0a0a0b" stroke-width="2"/><path d="M1200 578V600H1178" fill="none" stroke="#0a0a0b" stroke-width="2"/>
-<rect x="48" y="40" width="34" height="34" fill="#fff" stroke="#0a0a0b" stroke-width="1.5"/>
+<rect x="48" y="40" width="34" height="34" fill="#ffffff" stroke="#0a0a0b" stroke-width="1.5"/>
 <rect x="78" y="70" width="6" height="6" fill="#7d7d87"/>
 <text x="65" y="63" text-anchor="middle" font-family="'IBM Plex Mono','SFMono-Regular',Menlo,Consolas,monospace" font-size="16" font-weight="600" fill="#0a0a0b">C</text>
 <text x="96" y="63" font-family="'Inter Tight','Inter','Helvetica Neue',Helvetica,Arial,sans-serif" font-size="18" font-weight="600" letter-spacing="-0.3" fill="#0a0a0b">Cyber Naskar</text>
