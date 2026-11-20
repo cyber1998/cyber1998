@@ -124,7 +124,7 @@ function card(C) {
     const typed = line.type === 'typed';
     if (line.type === 'status') { t += 0.45; statusAt = t; }
     const id = 'l' + i;
-    defs += `<clipPath id="${id}"><rect x="${x0 - 2}" y="${y - LH + 8}" width="0" height="${LH}">${reveal(t, text.length, typed ? typeSpeed : 0)}</rect></clipPath>`;
+    defs += `<clipPath id="${id}"><rect x="${x0 - 2}" y="${y - LH + 8}" width="2000" height="${LH}">${reveal(t, text.length, typed ? typeSpeed : 0)}</rect></clipPath>`;
     if (typed) {
       for (let k = 0; k <= text.length; k++) {
         cursorT.push(t + k * typeSpeed);
