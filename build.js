@@ -1,278 +1,185 @@
-// Builds the SVG panels for the GitHub profile README in the same look as
-// cybernaskar.com: white boards, blueprint grid, corner brackets, Inter Tight /
-// Instrument Serif / IBM Plex Mono, and the cyan/red glitch.
-// Run: node build.js   (writes into ./assets)
+// Builds the profile card: an HTTP request for /cyber1998 types itself out,
+// then a 200 OK response arrives with a small JSON body. The status line
+// glitches in cyan and red. Writes a light and a dark version into ./assets.
+// Run: node build.js
 const fs = require('fs');
 const path = require('path');
 
 const OUT = path.join(__dirname, 'assets');
-// Light matches the site; dark is the same design inverted for GitHub dark mode.
 const THEMES = {
   light: {
-    bg: '#ffffff', panel: '#fbfbfc', field: '#ffffff', subtle: '#f6f6f8',
-    ink: '#0a0a0b', onInk: '#ffffff', text2: '#45454d', text3: '#7d7d87',
-    border: '#e2e2e6', borderStrong: '#bdbdc4', pill: 'rgba(0,0,0,0.45)',
-    grid: 'rgba(0,0,0,0.045)', red: 'rgb(232,64,88)', cyan: 'rgb(44,190,222)'
+    bg: '#ffffff', border: '#e4e4e8', ink: '#0a0a0b', mid: '#62626c', faint: '#a8a8b0',
+    red: 'rgb(232,64,88)', cyan: 'rgb(44,190,222)'
   },
   dark: {
-    bg: '#0b0b0d', panel: '#111114', field: '#0b0b0d', subtle: '#16161a',
-    ink: '#f2f2f4', onInk: '#0a0a0b', text2: '#b4b4bd', text3: '#85858f',
-    border: '#2a2a30', borderStrong: '#45454d', pill: 'rgba(255,255,255,0.5)',
-    grid: 'rgba(255,255,255,0.05)', red: 'rgb(240,84,108)', cyan: 'rgb(64,200,230)'
+    bg: '#0d0d10', border: '#26262c', ink: '#ededf0', mid: '#9d9da7', faint: '#5a5a64',
+    red: 'rgb(240,84,108)', cyan: 'rgb(64,200,230)'
   }
 };
-let C = THEMES.light;
-const SANS = "'Inter Tight','Inter','Helvetica Neue',Helvetica,Arial,sans-serif";
-const SERIF = "'Instrument Serif','Iowan Old Style','Palatino Linotype',Georgia,serif";
-const MONO = "'IBM Plex Mono','SFMono-Regular',Menlo,Consolas,monospace";
-const CYCLE = 7; // seconds per glitch loop
+const MONO = "'IBM Plex Mono','JetBrains Mono','SFMono-Regular',Menlo,Consolas,monospace";
+
+const T = 13;          // seconds per loop
+const FS = 19;         // font size
+const CH = 11.6;       // approx. character width at FS
+const LH = 31;         // line height
+const PAD = 44;        // outer padding
+const GUTTER = 54;     // line-number column
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-function svg(w, h, body, defs = '') {
-  return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
-<defs>
-  <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-    <path d="M40 0H0V40" fill="none" stroke="${C.grid}" stroke-width="1"/>
-  </pattern>
-  ${defs}
-</defs>
-${body}
-</svg>
-`;
-}
-
-// Sections with a heading sit on their own board, so the heading always has
-// a background of its own.
-function framed(w, h, body, defs) {
-  const pad = 36, k = (w - pad * 2) / w;
-  const H = Math.round(h * k + pad * 2);
-  return svg(w, H, `${board(0, 0, w, H)}
-<g transform="translate(${pad} ${pad}) scale(${k.toFixed(4)})">${body}</g>`, defs);
-}
-
-// White board with a faint grid and the site's corner brackets
-function board(x, y, w, h, { grid = true, corner = C.ink, fill = C.bg, len = 22 } = {}) {
-  const b = (px, py, dx, dy) =>
-    `<path d="M${px} ${py + dy * len}V${py}H${px + dx * len}" fill="none" stroke="${corner}" stroke-width="2"/>`;
-  return `<rect x="${x + 0.5}" y="${y + 0.5}" width="${w - 1}" height="${h - 1}" fill="${fill}" stroke="${C.border}"/>
-${grid ? `<rect x="${x + 1}" y="${y + 1}" width="${w - 2}" height="${h - 2}" fill="url(#grid)"/>` : ''}
-${b(x, y, 1, 1)}${b(x + w, y, -1, 1)}${b(x, y + h, 1, -1)}${b(x + w, y + h, -1, -1)}`;
-}
-
-// Discrete SMIL track that holds `rest` except during a burst at `at` seconds
-function burst(attr, at, rest, frames, step = 0.07) {
-  const times = [0];
-  const vals = [rest];
-  frames.forEach((v, i) => {
-    times.push((at + i * step) / CYCLE);
-    vals.push(v);
-  });
-  times.push((at + frames.length * step) / CYCLE);
-  vals.push(rest);
-  return `<animate attributeName="${attr}" dur="${CYCLE}s" repeatCount="indefinite" calcMode="discrete" keyTimes="${times.map((t) => t.toFixed(4)).join(';')}" values="${vals.join(';')}"/>`;
-}
-function burstMove(at, frames, step = 0.07) {
-  const times = [0];
-  const vals = ['0 0'];
-  frames.forEach((v, i) => {
-    times.push((at + i * step) / CYCLE);
-    vals.push(v + ' 0');
-  });
-  times.push((at + frames.length * step) / CYCLE);
-  vals.push('0 0');
-  return `<animateTransform attributeName="transform" type="translate" dur="${CYCLE}s" repeatCount="indefinite" calcMode="discrete" keyTimes="${times.map((t) => t.toFixed(4)).join(';')}" values="${vals.join(';')}"/>`;
-}
-
-// Glitch for a block of text: soft cyan/red fringes plus two sliced copies
-// that jump sideways, the same recipe as the site's headings.
-function glitchText(id, content, box, at) {
-  const { y, h } = box;
-  const slice = (fracs) => fracs.map(([a, b]) => [Math.round(y + a * h), Math.round(h * (b - a))]);
-  const A = slice([[0.10, 0.30], [0.55, 0.80], [0.30, 0.50], [0.80, 0.95]]);
-  const B = slice([[0.65, 0.90], [0.05, 0.25], [0.45, 0.65], [0.15, 0.40]]);
-  const clip = (cid, s) => `<clipPath id="${cid}"><rect x="0" width="2000" y="-10" height="0">
-    ${burst('y', at, -10, s.map((v) => v[0]))}${burst('height', at, 0, s.map((v) => v[1]))}</rect></clipPath>`;
-  const defs = `<g id="${id}">${content}</g>${clip(id + '-ca', A)}${clip(id + '-cb', B)}`;
-  const body = `
-<g opacity="0">${burst('opacity', at, 0, [0.55, 0.55, 0.55, 0.55])}${burstMove(at, [-3, -2, -3, -2])}<use href="#${id}" xlink:href="#${id}" fill="${C.cyan}" style="fill:${C.cyan}"/></g>
-<g opacity="0">${burst('opacity', at, 0, [0.55, 0.55, 0.55, 0.55])}${burstMove(at, [3, 2, 3, 2])}<use href="#${id}" xlink:href="#${id}" fill="${C.red}" style="fill:${C.red}"/></g>
-<use href="#${id}" xlink:href="#${id}" style="fill:${C.ink}"/>
-<g clip-path="url(#${id}-ca)">${burstMove(at, [-4, 5, -3, 4])}<use href="#${id}" xlink:href="#${id}" style="fill:${C.red};opacity:0.85"/></g>
-<g clip-path="url(#${id}-cb)">${burstMove(at, [4, -5, 3, -4])}<use href="#${id}" xlink:href="#${id}" style="fill:${C.cyan};opacity:0.85"/></g>`;
-  return { defs, body };
-}
-
-// ---------- Header: hero text + an at-a-glance card ----------
-function header() {
-  const W = 1200, H = 600;
-
-  const title = glitchText('title',
-    `<text x="48" y="262" font-family="${SANS}" font-size="84" font-weight="700" letter-spacing="-3.4">I build systems</text>
-     <text x="48" y="346" font-family="${SERIF}" font-size="88" font-style="italic" letter-spacing="-1.5">that scale.</text>`,
-    { y: 186, h: 180 }, 1.0);
-
-  const sub = [
-    'Backend engineer and software consultant helping',
-    'teams design, build, and optimize production-grade',
-    'systems. From high-traffic APIs to AI-powered features.'
-  ].map((l, i) => `<text x="68" y="${424 + i * 30}" font-family="${SANS}" font-size="19" fill="${C.text2}">${esc(l)}</text>`).join('');
-
-  const meta = ['8+ years experience', 'Pune, India', 'Remote-friendly'];
-  let mx = 48;
-  const metaSvg = meta.map((m) => {
-    const t = `<text x="${mx}" y="548" font-family="${MONO}" font-size="14" fill="${C.text3}"><tspan fill="${C.ink}">/ </tspan>${esc(m)}</text>`;
-    mx += (m.length + 2) * 8.6 + 22;
-    return t;
-  }).join('');
-
-  const cx = 808, cy = 150, cw = 344;
-  const rows = [
-    ['Role', 'Senior Software Engineer'],
-    ['At', 'Anatta · Shopify Platinum Partner'],
-    ['Focus', 'Backend + AI'],
-    ['Stack', 'Python · Django · GraphQL · LLMs'],
-    ['Based', 'Pune, India · Remote']
+// Each line is a list of [text, tone, extra] runs.
+function lines() {
+  return [
+    { type: 'typed', runs: [['GET', 'ink', 'bold'], [' /cyber1998 ', 'ink'], ['HTTP/1.1', 'faint']] },
+    { type: 'typed', runs: [['Host: ', 'mid'], ['github.com', 'ink']] },
+    { type: 'blank' },
+    { type: 'status', runs: [['HTTP/1.1 ', 'faint'], ['200 OK', 'ink', 'bold']] },
+    { type: 'out', runs: [['Content-Type: ', 'mid'], ['application/json', 'ink']] },
+    { type: 'out', runs: [['X-Uptime: ', 'mid'], ['8+ years', 'ink']] },
+    { type: 'blank' },
+    { type: 'out', runs: [['{', 'faint']] },
+    json('name', '"Cyber Naskar"'),
+    json('works_as', '"Senior Software Engineer at Anatta, as a consultant"'),
+    json('builds', '["backends", "APIs", "LLM features"]'),
+    json('speaks', '["python", "django", "fastapi", "graphql", "postgres"]'),
+    json('based_in', '"Pune, India"'),
+    json('open_to', '"interesting problems"', true),
+    { type: 'out', runs: [['}', 'faint']] }
   ];
-  const rowH = 58, top = cy + 64;
-  const ch = top - cy + rows.length * rowH + 8;
-  const card = `${board(cx, cy, cw, ch, { grid: false, fill: C.panel })}
-<text x="${cx + 26}" y="${cy + 40}" font-family="${MONO}" font-size="13" fill="${C.text3}">At a glance</text>
-${rows.map(([k, v], i) => {
-    const y = top + i * rowH;
-    return `<line x1="${cx + 26}" y1="${y}" x2="${cx + cw - 26}" y2="${y}" stroke="${C.border}"/>
-<text x="${cx + 26}" y="${y + 22}" font-family="${MONO}" font-size="12" fill="${C.text3}">${esc(k)}</text>
-<text x="${cx + 26}" y="${y + 45}" font-family="${SANS}" font-size="17" font-weight="500" fill="${C.ink}">${esc(v)}</text>`;
-  }).join('\n')}`;
-
-  const body = `${board(0, 0, W, H)}
-<rect x="48" y="40" width="34" height="34" fill="${C.field}" stroke="${C.ink}" stroke-width="1.5"/>
-<rect x="78" y="70" width="6" height="6" fill="${C.text3}"/>
-<text x="65" y="63" text-anchor="middle" font-family="${MONO}" font-size="16" font-weight="600" fill="${C.ink}">C</text>
-<text x="96" y="63" font-family="${SANS}" font-size="18" font-weight="600" letter-spacing="-0.3" fill="${C.ink}">Cyber Naskar</text>
-<text x="${W - 48}" y="62" text-anchor="end" font-family="${MONO}" font-size="14" fill="${C.text2}">cybernaskar.com</text>
-<line x1="48" y1="100" x2="${W - 48}" y2="100" stroke="${C.border}"/>
-${title.body}
-<rect x="48" y="404" width="2" height="72" fill="${C.ink}"/>
-${sub}
-${metaSvg}
-${card}`;
-  return svg(W, H, body, title.defs);
+}
+function json(key, value, last) {
+  return { type: 'out', runs: [['  "', 'faint'], [key, 'ink'], ['": ', 'faint'], [value, 'mid'], [last ? '' : ',', 'faint']] };
 }
 
-// ---------- Buttons ----------
-function button(label, primary) {
-  const w = Math.round(label.length * 9.4 + 52), h = 52, cut = 10;
-  const shape = primary
-    ? `<path d="M0 0H${w - cut}L${w} ${cut}V${h}H${cut}L0 ${h - cut}Z" fill="${C.ink}"/>`
-    : `<rect x="0.75" y="0.75" width="${w - 1.5}" height="${h - 1.5}" fill="${C.field}" stroke="${C.borderStrong}" stroke-width="1.5"/>`;
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
-${shape}
-<text x="${w / 2}" y="31.5" text-anchor="middle" font-family="${MONO}" font-size="15" font-weight="600" fill="${primary ? C.onInk : C.ink}">${esc(label)}</text>
-</svg>
-`;
-}
+const pct = (s) => (s / T).toFixed(4);
 
-// ---------- Stats ----------
-function stats() {
-  const W = 1200, H = 184, gap = 18, cw = (W - gap * 2) / 3;
-  const items = [
-    ['Experience', '8+', 'years', ['Senior-level backend engineering', 'across startups and enterprise clients.']],
-    ['Client work', '7+', 'teams', ['Consultant first. Direct access,', 'async-friendly.']],
-    ['Primary focus', 'Backend', '+ AI', ['APIs, data, and LLM features that', 'hold up in production.']]
-  ];
-  const body = items.map(([label, big, small, desc], i) => {
-    const x = i * (cw + gap);
-    const bigW = big.length * (big.length > 3 ? 27 : 30);
-    return `${board(x, 0, cw, H, { corner: C.borderStrong })}
-<text x="${x + 28}" y="44" font-family="${MONO}" font-size="13" fill="${C.text3}">${esc(label)}</text>
-<text x="${x + 26}" y="100" font-family="${SANS}" font-size="48" font-weight="700" letter-spacing="-2" fill="${C.ink}">${esc(big)}<tspan dx="8" font-size="22" font-weight="600" letter-spacing="-0.4">${esc(small)}</tspan></text>
-${desc.map((d, j) => `<text x="${x + 28}" y="${138 + j * 22}" font-family="${SANS}" font-size="15" fill="${C.text2}">${esc(d)}</text>`).join('')}`;
-  }).join('\n');
-  return svg(W, H, body);
-}
-
-// ---------- Section heading with the glitch ----------
-function heading(id, text, accent, at) {
-  return glitchText(id,
-    `<text x="0" y="46" font-family="${SANS}" font-size="44" font-weight="700" letter-spacing="-1.6">${esc(text)} <tspan font-family="${SERIF}" font-style="italic" font-weight="400" letter-spacing="-0.5">${esc(accent)}</tspan></text>`,
-    { y: 6, h: 52 }, at);
-}
-
-// ---------- Now: current role ----------
-function now() {
-  const W = 1200, H = 420;
-  const hd = heading('now-h', 'Right', 'now.', 2.4);
-  const bx = 0, by = 86, bw = W, bh = H - by;
-  const pill = 'Oct 2026 – Present';
-  const pw = pill.length * 7.6 + 22;
-  const points = [
-    'Engineering for luxury brands M.Gemi and John Hardy across performance optimisation, load testing, and security hardening',
-    'Building a generic backend ecosystem product for developers and management, boosting team efficiency and project delivery'
-  ];
-  const brands = [
-    ['John Hardy', 'Luxury jewellery house', '$100M+ annual revenue'],
-    ['M.Gemi', 'Handmade Italian luxury footwear', '$80M+ venture-backed']
-  ];
-  const cardW = (bw - 64 - 14) / 2;
-  const body = `${hd.body}
-${board(bx, by, bw, bh, { corner: C.borderStrong })}
-<text x="32" y="${by + 50}" font-family="${SANS}" font-size="24" font-weight="600" letter-spacing="-0.4" fill="${C.ink}">Senior Software Engineer</text>
-<text x="32" y="${by + 78}" font-family="${SANS}" font-size="16" fill="${C.ink}">Anatta · Shopify Platinum Partner · Remote, as a consultant</text>
-<rect x="${bw - 32 - pw}" y="${by + 30}" width="${pw}" height="28" fill="${C.field}" stroke="${C.pill}"/>
-<text x="${bw - 32 - pw / 2}" y="${by + 49}" text-anchor="middle" font-family="${MONO}" font-size="13" fill="${C.ink}">${esc(pill)}</text>
-${points.map((p, i) => `<text x="32" y="${by + 124 + i * 30}" font-family="${MONO}" font-size="15" font-weight="700" fill="${C.ink}">&gt;</text>
-<text x="54" y="${by + 124 + i * 30}" font-family="${SANS}" font-size="16" fill="${C.text2}">${esc(p)}</text>`).join('\n')}
-${brands.map(([n, d, f], i) => {
-    const x = 32 + i * (cardW + 14), y = by + 192;
-    return `<rect x="${x + 0.5}" y="${y + 0.5}" width="${cardW - 1}" height="111" fill="${C.subtle}" stroke="${C.border}"/>
-<text x="${x + 20}" y="${y + 38}" font-family="${SERIF}" font-style="italic" font-size="28" fill="${C.ink}">${esc(n)}</text>
-<text x="${x + 20}" y="${y + 64}" font-family="${SANS}" font-size="15" fill="${C.text2}">${esc(d)}</text>
-<text x="${x + 20}" y="${y + 92}" font-family="${MONO}" font-size="13" fill="${C.ink}">${esc(f)}</text>`;
-  }).join('\n')}`;
-  return framed(W, H, body, hd.defs);
-}
-
-// ---------- Stack ----------
-function stack() {
-  const W = 1200;
-  const hd = heading('stack-h', 'The', 'stack.', 5.2);
-  const rows = [
-    ['Core', ['Python', 'Django', 'FastAPI', 'GraphQL', 'Postgres', 'MySQL', 'Redis', 'TypeScript']],
-    ['Cloud', ['AWS', 'GCP', 'Docker', 'Pinecone', 'pgvector']],
-    ['AI', ['LangChain', 'PydanticAI', 'OpenAI', 'Gemini', 'Anthropic', 'Agentic workflows', 'Guardrails']]
-  ];
-  const top = 86, rowH = 62, H = top + 40 + rows.length * rowH + 16;
-  let out = `${hd.body}\n${board(0, top, W, H - top, { corner: C.borderStrong })}`;
-  rows.forEach(([label, tags], r) => {
-    const y = top + 36 + r * rowH;
-    out += `<text x="32" y="${y + 24}" font-family="${MONO}" font-size="13" fill="${C.text3}">${esc(label)}</text>`;
-    let x = 140;
-    tags.forEach((t) => {
-      const w = Math.round(t.length * 8.4 + 30);
-      out += `<rect x="${x + 0.5}" y="${y + 0.5}" width="${w - 1}" height="37" fill="${C.field}" stroke="${C.borderStrong}"/>
-<text x="${x + w / 2}" y="${y + 24}" text-anchor="middle" font-family="${SANS}" font-size="15" font-weight="500" fill="${C.ink}">${esc(t)}</text>`;
-      x += w + 10;
-    });
-  });
-  return framed(W, H, out, hd.defs);
-}
-
-const build = () => ({
-  'header.svg': header(),
-  'stats.svg': stats(),
-  'now.svg': now(),
-  'stack.svg': stack(),
-  'btn-call.svg': button('Book a call →', true),
-  'btn-site.svg': button('Website', false),
-  'btn-chat.svg': button('Chat with my AI', false),
-  'btn-linkedin.svg': button('LinkedIn', false)
-});
-for (const theme of Object.keys(THEMES)) {
-  C = THEMES[theme];
-  for (const [name, content] of Object.entries(build())) {
-    const file = theme === 'light' ? name : name.replace('.svg', '-dark.svg');
-    fs.writeFileSync(path.join(OUT, file), content);
-    console.log(file.padEnd(22), (Buffer.byteLength(content) / 1024).toFixed(1) + ' KB');
+// Width of a clip rect over time: hidden, then revealed (char by char or at once),
+// held until just before the loop restarts.
+function reveal(start, chars, perChar) {
+  const times = [0], vals = [0];
+  if (perChar) {
+    for (let i = 1; i <= chars; i++) {
+      times.push(pct(start + (i - 1) * perChar));
+      vals.push((i * CH + 2).toFixed(1));
+    }
+  } else {
+    times.push(pct(start));
+    vals.push(2000);
   }
+  times.push(pct(T - 0.5));
+  vals.push(0);
+  return `<animate attributeName="width" dur="${T}s" repeatCount="indefinite" calcMode="discrete" keyTimes="${times.join(';')}" values="${vals.join(';')}"/>`;
+}
+
+// Short burst track: rest value except for a few frames starting at `at`
+function burst(attr, at, rest, frames, step = 0.07) {
+  const times = [0], vals = [rest];
+  frames.forEach((v, i) => { times.push(pct(at + i * step)); vals.push(v); });
+  times.push(pct(at + frames.length * step)); vals.push(rest);
+  return `<animate attributeName="${attr}" dur="${T}s" repeatCount="indefinite" calcMode="discrete" keyTimes="${times.join(';')}" values="${vals.join(';')}"/>`;
+}
+// Two bursts of sideways jumps on one transform track
+function jumps(bursts, step = 0.07) {
+  const times = [0], vals = ['0 0'];
+  bursts.forEach(([at, frames]) => {
+    frames.forEach((v, i) => { times.push(pct(at + i * step)); vals.push(v + ' 0'); });
+    times.push(pct(at + frames.length * step)); vals.push('0 0');
+  });
+  return `<animateTransform attributeName="transform" type="translate" dur="${T}s" repeatCount="indefinite" calcMode="discrete" keyTimes="${times.join(';')}" values="${vals.join(';')}"/>`;
+}
+function flashes(bursts, value, step = 0.07) {
+  const times = [0], vals = [0];
+  bursts.forEach(([at, n]) => {
+    for (let i = 0; i < n; i++) { times.push(pct(at + i * step)); vals.push(value); }
+    times.push(pct(at + n * step)); vals.push(0);
+  });
+  return `<animate attributeName="opacity" dur="${T}s" repeatCount="indefinite" calcMode="discrete" keyTimes="${times.join(';')}" values="${vals.join(';')}"/>`;
+}
+
+function card(C) {
+  const L = lines();
+  const longest = Math.max(...L.map((l) => (l.runs || []).reduce((n, r) => n + r[0].length, 0)));
+  const W = Math.round(PAD * 2 + GUTTER + longest * CH + 40);
+  const H = PAD * 2 + L.length * LH;
+  const x0 = PAD + GUTTER;
+
+  const runSvg = (runs) => runs.map(([t, tone, extra]) =>
+    `<tspan fill="${C[tone]}"${extra === 'bold' ? ' font-weight="600"' : ''}>${esc(t)}</tspan>`).join('');
+
+  let t = 0.5;             // request starts typing
+  const typeSpeed = 0.055;
+  let defs = '', body = '';
+  const cursorT = [], cursorXY = [];
+  let statusAt = 0;
+
+  L.forEach((line, i) => {
+    const y = PAD + (i + 1) * LH - 9;
+    const num = `<text x="${PAD + GUTTER - 22}" y="${y}" text-anchor="end" font-family="${MONO}" font-size="${FS - 3}" fill="${C.faint}">${i + 1}</text>`;
+    if (line.type === 'blank') {
+      t += 0.35;
+      body += num;
+      return;
+    }
+    const text = line.runs.map((r) => r[0]).join('');
+    const typed = line.type === 'typed';
+    if (line.type === 'status') { t += 0.45; statusAt = t; }
+    const id = 'l' + i;
+    defs += `<clipPath id="${id}"><rect x="${x0 - 2}" y="${y - LH + 8}" width="0" height="${LH}">${reveal(t, text.length, typed ? typeSpeed : 0)}</rect></clipPath>`;
+    if (typed) {
+      for (let k = 0; k <= text.length; k++) {
+        cursorT.push(t + k * typeSpeed);
+        cursorXY.push([x0 + k * CH, y]);
+      }
+    }
+    const content = `<text x="${x0}" y="${y}" font-family="${MONO}" font-size="${FS}" xml:space="preserve">${runSvg(line.runs)}</text>`;
+    if (line.type === 'status') {
+      // Glitch: cyan and red copies pull apart while the line itself jumps
+      defs += `<g id="status">${content}</g>`;
+      const b = [[statusAt + 0.25, 4], [statusAt + 5.2, 3]];
+      body += `${num}<g clip-path="url(#${id})">
+<g opacity="0">${flashes(b, 0.75)}${jumps([[b[0][0], [-3, -2, -4, -2]], [b[1][0], [-4, -2, -3]]])}<use href="#status" filter="url(#tint-c)"/></g>
+<g opacity="0">${flashes(b, 0.75)}${jumps([[b[0][0], [3, 2, 4, 2]], [b[1][0], [4, 2, 3]]])}<use href="#status" filter="url(#tint-r)"/></g>
+<g>${jumps([[b[0][0], [2, -3, 1, 0]], [b[1][0], [-2, 3, 0]]])}<use href="#status"/></g>
+</g>`;
+    } else {
+      body += `${num}<g clip-path="url(#${id})">${content}</g>`;
+    }
+    t += typed ? text.length * typeSpeed + 0.25 : 0.09;
+  });
+
+  // Recolour a copy to one flat glitch colour, whatever its tspan fills are
+  const tint = (id, color) => `<filter id="${id}" x="0" y="-20%" width="100%" height="140%"><feFlood flood-color="${color}"/><feComposite in2="SourceAlpha" operator="in"/></filter>`;
+  defs += tint('tint-r', C.red) + tint('tint-c', C.cyan);
+
+  // Block cursor: follows the typing, blinks while waiting, leaves when the response lands
+  const endTyping = cursorT[cursorT.length - 1];
+  const keyT = [0, ...cursorT.map(pct)];
+  const xs = [cursorXY[0][0], ...cursorXY.map((p) => p[0])];
+  const ys = [cursorXY[0][1], ...cursorXY.map((p) => p[1])].map((v) => v - FS + 1);
+  const blinkT = [0], blinkV = [0];
+  blinkT.push(pct(0.5)); blinkV.push(1);
+  for (let s = endTyping + 0.3, on = false; s < statusAt; s += 0.45, on = !on) { blinkT.push(pct(s)); blinkV.push(on ? 1 : 0); }
+  blinkT.push(pct(statusAt)); blinkV.push(0);
+  const cursor = `<rect width="${CH}" height="${FS + 3}" fill="${C.ink}" x="${xs[0]}" y="${ys[0]}" opacity="0">
+<animate attributeName="x" dur="${T}s" repeatCount="indefinite" calcMode="discrete" keyTimes="${keyT.join(';')}" values="${xs.join(';')}"/>
+<animate attributeName="y" dur="${T}s" repeatCount="indefinite" calcMode="discrete" keyTimes="${keyT.join(';')}" values="${ys.join(';')}"/>
+<animate attributeName="opacity" dur="${T}s" repeatCount="indefinite" calcMode="discrete" keyTimes="${blinkT.join(';')}" values="${blinkV.join(';')}"/>
+</rect>`;
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+<defs>${defs}</defs>
+<rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="10" fill="${C.bg}" stroke="${C.border}"/>
+<line x1="${PAD + GUTTER - 8}" y1="${PAD - 6}" x2="${PAD + GUTTER - 8}" y2="${H - PAD + 6}" stroke="${C.border}"/>
+${body}
+${cursor}
+</svg>
+`;
+}
+
+for (const f of fs.readdirSync(OUT)) fs.unlinkSync(path.join(OUT, f));
+for (const [name, C] of Object.entries(THEMES)) {
+  const file = name === 'light' ? 'card.svg' : 'card-dark.svg';
+  const out = card(C);
+  fs.writeFileSync(path.join(OUT, file), out);
+  console.log(file.padEnd(14), (Buffer.byteLength(out) / 1024).toFixed(1) + ' KB');
 }
