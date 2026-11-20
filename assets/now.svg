@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1200" height="420" viewBox="0 0 1200 420">
+<defs>
+  <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+    <path d="M40 0H0V40" fill="none" stroke="rgba(0,0,0,0.045)" stroke-width="1"/>
+  </pattern>
+  <g id="now-h"><text x="0" y="46" font-family="'Inter Tight','Inter','Helvetica Neue',Helvetica,Arial,sans-serif" font-size="44" font-weight="700" letter-spacing="-1.6">Right <tspan font-family="'Instrument Serif','Iowan Old Style','Palatino Linotype',Georgia,serif" font-style="italic" font-weight="400" letter-spacing="-0.5">now.</tspan></text></g><clipPath id="now-h-ca"><rect x="0" width="2000" y="-10" height="0">
+    <animate attributeName="y" dur="7s" repeatCount="indefinite" calcMode="discrete" keyTimes="0.0000;0.3429;0.3529;0.3629;0.3729;0.3829" values="-10;11;35;22;48;-10"/><animate attributeName="height" dur="7s" repeatCount="indefinite" calcMode="discrete" keyTimes="0.0000;0.3429;0.3529;0.3629;0.3729;0.3829" values="0;10;13;10;8;0"/></rect></clipPath><clipPath id="now-h-cb"><rect x="0" width="2000" y="-10" height="0">
+    <animate attributeName="y" dur="7s" repeatCount="indefinite" calcMode="discrete" keyTimes="0.0000;0.3429;0.3529;0.3629;0.3729;0.3829" values="-10;40;9;29;14;-10"/><animate attributeName="height" dur="7s" repeatCount="indefinite" calcMode="discrete" keyTimes="0.0000;0.3429;0.3529;0.3629;0.3729;0.3829" values="0;13;10;10;13;0"/></rect></clipPath>
+</defs>
+
+<g opacity="0"><animate attributeName="opacity" dur="7s" repeatCount="indefinite" calcMode="discrete" keyTimes="0.0000;0.3429;0.3529;0.3629;0.3729;0.3829" values="0;0.55;0.55;0.55;0.55;0"/><animateTransform attributeName="transform" type="translate" dur="7s" repeatCount="indefinite" calcMode="discrete" keyTimes="0.0000;0.3429;0.3529;0.3629;0.3729;0.3829" values="0 0;-3 0;-2 0;-3 0;-2 0;0 0"/><use href="#now-h" xlink:href="#now-h" fill="rgb(44,190,222)" style="fill:rgb(44,190,222)"/></g>
+<g opacity="0"><animate attributeName="opacity" dur="7s" repeatCount="indefinite" calcMode="discrete" keyTimes="0.0000;0.3429;0.3529;0.3629;0.3729;0.3829" values="0;0.55;0.55;0.55;0.55;0"/><animateTransform attributeName="transform" type="translate" dur="7s" repeatCount="indefinite" calcMode="discrete" keyTimes="0.0000;0.3429;0.3529;0.3629;0.3729;0.3829" values="0 0;3 0;2 0;3 0;2 0;0 0"/><use href="#now-h" xlink:href="#now-h" fill="rgb(232,64,88)" style="fill:rgb(232,64,88)"/></g>
+<use href="#now-h" xlink:href="#now-h" style="fill:#0a0a0b"/>
+<g clip-path="url(#now-h-ca)"><animateTransform attributeName="transform" type="translate" dur="7s" repeatCount="indefinite" calcMode="discrete" keyTimes="0.0000;0.3429;0.3529;0.3629;0.3729;0.3829" values="0 0;-4 0;5 0;-3 0;4 0;0 0"/><use href="#now-h" xlink:href="#now-h" style="fill:rgb(232,64,88);opacity:0.85"/></g>
+<g clip-path="url(#now-h-cb)"><animateTransform attributeName="transform" type="translate" dur="7s" repeatCount="indefinite" calcMode="discrete" keyTimes="0.0000;0.3429;0.3529;0.3629;0.3729;0.3829" values="0 0;4 0;-5 0;3 0;-4 0;0 0"/><use href="#now-h" xlink:href="#now-h" style="fill:rgb(44,190,222);opacity:0.85"/></g>
+<rect x="0.5" y="86.5" width="1199" height="333" fill="#ffffff" stroke="#e2e2e6"/>
+<rect x="1" y="87" width="1198" height="332" fill="url(#grid)"/>
+<path d="M0 108V86H22" fill="none" stroke="#bdbdc4" stroke-width="2"/><path d="M1200 108V86H1178" fill="none" stroke="#bdbdc4" stroke-width="2"/><path d="M0 398V420H22" fill="none" stroke="#bdbdc4" stroke-width="2"/><path d="M1200 398V420H1178" fill="none" stroke="#bdbdc4" stroke-width="2"/>
+<text x="32" y="136" font-family="'Inter Tight','Inter','Helvetica Neue',Helvetica,Arial,sans-serif" font-size="24" font-weight="600" letter-spacing="-0.4" fill="#0a0a0b">Senior Software Engineer</text>
+<text x="32" y="164" font-family="'Inter Tight','Inter','Helvetica Neue',Helvetica,Arial,sans-serif" font-size="16" fill="#0a0a0b">Anatta · Shopify Platinum Partner · Remote, as a consultant</text>
+<rect x="1009.2" y="116" width="158.79999999999998" height="28" fill="#fff" stroke="rgba(0,0,0,0.45)"/>
+<text x="1088.6" y="135" text-anchor="middle" font-family="'IBM Plex Mono','SFMono-Regular',Menlo,Consolas,monospace" font-size="13" fill="#0a0a0b">Oct 2026 – Present</text>
+<text x="32" y="210" font-family="'IBM Plex Mono','SFMono-Regular',Menlo,Consolas,monospace" font-size="15" font-weight="700" fill="#0a0a0b">&gt;</text>
+<text x="54" y="210" font-family="'Inter Tight','Inter','Helvetica Neue',Helvetica,Arial,sans-serif" font-size="16" fill="#45454d">Engineering for luxury brands M.Gemi and John Hardy across performance optimisation, load testing, and security hardening</text>
+<text x="32" y="240" font-family="'IBM Plex Mono','SFMono-Regular',Menlo,Consolas,monospace" font-size="15" font-weight="700" fill="#0a0a0b">&gt;</text>
+<text x="54" y="240" font-family="'Inter Tight','Inter','Helvetica Neue',Helvetica,Arial,sans-serif" font-size="16" fill="#45454d">Building a generic backend ecosystem product for developers and management, boosting team efficiency and project delivery</text>
+<rect x="32.5" y="278.5" width="560" height="111" fill="#f6f6f8" stroke="#e2e2e6"/>
+<text x="52" y="316" font-family="'Instrument Serif','Iowan Old Style','Palatino Linotype',Georgia,serif" font-style="italic" font-size="28" fill="#0a0a0b">John Hardy</text>
+<text x="52" y="342" font-family="'Inter Tight','Inter','Helvetica Neue',Helvetica,Arial,sans-serif" font-size="15" fill="#45454d">Luxury jewellery house</text>
+<text x="52" y="370" font-family="'IBM Plex Mono','SFMono-Regular',Menlo,Consolas,monospace" font-size="13" fill="#0a0a0b">$100M+ annual revenue</text>
+<rect x="607.5" y="278.5" width="560" height="111" fill="#f6f6f8" stroke="#e2e2e6"/>
+<text x="627" y="316" font-family="'Instrument Serif','Iowan Old Style','Palatino Linotype',Georgia,serif" font-style="italic" font-size="28" fill="#0a0a0b">M.Gemi</text>
+<text x="627" y="342" font-family="'Inter Tight','Inter','Helvetica Neue',Helvetica,Arial,sans-serif" font-size="15" fill="#45454d">Handmade Italian luxury footwear</text>
+<text x="627" y="370" font-family="'IBM Plex Mono','SFMono-Regular',Menlo,Consolas,monospace" font-size="13" fill="#0a0a0b">$80M+ venture-backed</text>
+</svg>
